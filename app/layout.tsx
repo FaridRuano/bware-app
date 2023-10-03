@@ -18,7 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <div className='bg-grid-gradient'/>
-        <main> 
+        <main>           
           {children}
         </main>
       </body>

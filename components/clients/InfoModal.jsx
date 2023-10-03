@@ -3,8 +3,36 @@
 import ModalConfirm from "@components/shared/ModalConfirm";
 import { useEffect, useState } from "react";
 import { X, Plus } from "react-feather";
+import useSWR from 'swr';
+import urls from "@configuration/conf"
+import Loading from "@components/shared/Loading"
 
 export default function InfoModal({ client, isOpen, handleModal }) {
+
+    const fetcher = async (url) => {
+        const response = await fetch(url);
+        const data = await response.json();
+      
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+      
+        if (!data) {
+            mutate(url);
+        }
+      
+        return data;
+    }
+
+
+    const { data: phones, error: er1, isLoading:isL1 } = useSWR(urls.API_URL+"clients?met=phones", fetcher, {
+        revalidateOnMount: true
+    })
+
+    const { data: emails, error: er2, isLoading:isL2 } = useSWR(urls.API_URL+"clients?met=emails", fetcher, {
+        revalidateOnMount: true
+    })
+    
     const [nClient, setNClient] = useState(null)
 
     const [emailValues, setEmailValues] = useState([]);
@@ -31,36 +59,6 @@ export default function InfoModal({ client, isOpen, handleModal }) {
         setPhoneValues(prev => [...prev, {cod: cod, phone: ''}])
     }
 
-    const phones = [
-        {
-            cod: 20313,
-            phone: '123151245123'
-        },
-        {
-            cod: 20313,
-            phone: '23131212323'
-        },
-        {
-            cod: 50313,
-            phone: '1929301841'
-        }
-    ]
-
-    const emails = [
-        {
-            cod: 20313,
-            email: 'fruano2@gmail.com'
-        },
-        {
-            cod: 20313,
-            email: 'fruano3@gmail.com'
-        },
-        {
-            cod: 50313,
-            email: 'ruano@gmail.com'
-        }
-    ]
-
     const emailsInput = (cod) => {
         const emailsData = emails.filter((item) => item.cod === cod)
         return (
@@ -84,7 +82,7 @@ export default function InfoModal({ client, isOpen, handleModal }) {
             </>
         )
     }
-
+    
     const phonesInput = (cod) => {
         const phonesData = phones.filter((item) => item.cod === cod)
         return (
@@ -108,7 +106,7 @@ export default function InfoModal({ client, isOpen, handleModal }) {
             </>
         )
     }
-
+    
     const handleInputChange = (event) => {
         const { name, value } = event.target;
         setNClient((prevValues) => ({
@@ -173,122 +171,130 @@ export default function InfoModal({ client, isOpen, handleModal }) {
             break;
         }
         return name
-      }
+    }
 
     useEffect(() => {
         setNClient(client)
         setEdit(false)
-        const emailsData = emails.filter((item) => item.cod === client.cod)
-        setEmailValues(emailsData)
-        const phonesData = phones.filter((item) => item.cod === client.cod)
-        setPhoneValues(phonesData)
+        if(phones && emails){
+            const emailsData = emails.filter((item) => item.cod === client.cod)
+            setEmailValues(emailsData)
+            const phonesData = phones.filter((item) => item.cod === client.cod)
+            setPhoneValues(phonesData)
+        }
     }, [client]);
 
-    return (
-        <>
-            {
-                client && (
-                    <div className={`cl-modal-warp ${isOpen ? '' : 'closed'}`}>
-                        <div className="cl-modal-close" onClick={handleModal}>
-                            <X className="cl-close" width={30} height={39} />
-                        </div>
-                        <div className="cl-modal-info">
-                            <div className="cl-modal-header">
-                                <h1>Información del cliente</h1>
-                            </div>
-                            <div className="cl-modal-body">
-                                <div className="cl-modal-inputs">
-                                    <div className="cl-modal-span sm">
-                                        <span>
-                                            Código:
-                                        </span>
-                                        <p>
-                                            {client.cod}
-                                        </p>
-                                    </div>
-                                    <div className="cl-modal-span">
-                                        <span>
-                                            Nombre:
-                                        </span>
-                                        <p>
-                                            {client.name}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="cl-modal-inputs">
-                                    <div className="cl-modal-span sm">
-                                        <span>
-                                            Tipo:
-                                        </span>
-                                        <p>
-                                            {dniType(client.type)}
-                                        </p>
-                                    </div>
-                                    <div className="cl-modal-span">
-                                        <span>
-                                            Identificacion:
-                                        </span>
-                                        <p>
-                                            {client.dni}
-                                        </p>
-                                    </div>
-                                </div>
-                                {nClient && (
-                                    <>
-                                        <div className="cl-modal-input">
-                                            <span>
-                                                Correos:
-                                            </span>
-                                            <input value={!edit ? client.email : nClient.email} name="email" onChange={handleInputChange} readOnly={!edit} />
-                                            {emailsInput(client.cod)}
-                                            {
-                                                edit && (
-                                                    <>
-                                                        <button className="btn btn-sm center-div" onClick={() => handleAddEmail(client.cod)}><Plus /></button>
-                                                    </>
-                                                )
-                                            }
-                                        </div>
-                                        <div className="cl-modal-input">
-                                            <span>
-                                                Telefonos:
-                                            </span>
-                                            <input value={!edit ? client.phone : nClient.phone} name="phone" onChange={handleInputChange} readOnly={!edit} />
-                                            {phonesInput(client.cod)}
-                                            {
-                                                edit && (
-                                                    <>
-                                                        <button className="btn btn-sm center-div" onClick={() => handleAddPhone(client.cod)}><Plus /></button>
-                                                    </>
-                                                )
-                                            }
-                                        </div>
-                                        <div className="cl-modal-input">
-                                            <span>
-                                                Dirección:
-                                            </span>
-                                            <input value={!edit ? client.dir : nClient.dir} name="dir" onChange={handleInputChange} readOnly={!edit} />
-                                        </div>
-                                    </>)}
+    if (isL1 || isL2) {
+        return <Loading/>
+    }
 
+    if(phones && emails){
+        return (        
+            <>
+                {
+                    client && (
+                        <div className={`cl-modal-warp ${isOpen ? '' : 'closed'}`}>
+                            <div className="cl-modal-close" onClick={handleModal}>
+                                <X className="cl-close" width={30} height={39} />
                             </div>
-                        </div>
-                        <div className="cl-modal-buttons">
-                            <button className={`save ${!edit ? 'btn-dis' : ''}`} onClick={handleSave} disabled={!edit}>
-                                Guardar
-                            </button>
-                            <button className="edit" onClick={handleEdit}>
-                                {!edit ? 'Editar' : 'Cancelar'}
-                            </button>
-                            <button className="delete" onClick={() => delRow(client.id, client.name)}>
-                                Eliminar
-                            </button>
-                        </div>
-                    </div>
-                )
-            }
-            <ModalConfirm text={modalText} isOn={openModal} handleModal={handleClose} response={handleRes} />
-        </>
-    )
+                            <div className="cl-modal-info">
+                                <div className="cl-modal-header">
+                                    <h1>Información del cliente</h1>
+                                </div>
+                                <div className="cl-modal-body">
+                                    <div className="cl-modal-inputs">
+                                        <div className="cl-modal-span sm">
+                                            <span>
+                                                Código:
+                                            </span>
+                                            <p>
+                                                {client.cod}
+                                            </p>
+                                        </div>
+                                        <div className="cl-modal-span">
+                                            <span>
+                                                Nombre:
+                                            </span>
+                                            <p>
+                                                {client.name}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="cl-modal-inputs">
+                                        <div className="cl-modal-span sm">
+                                            <span>
+                                                Tipo:
+                                            </span>
+                                            <p>
+                                                {dniType(client.type)}
+                                            </p>
+                                        </div>
+                                        <div className="cl-modal-span">
+                                            <span>
+                                                Identificacion:
+                                            </span>
+                                            <p>
+                                                {client.dni}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {nClient && (
+                                        <>
+                                            <div className="cl-modal-input">
+                                                <span>
+                                                    Correos:
+                                                </span>
+                                                {emailsInput(client.cod)}
+                                                {
+                                                    edit && (
+                                                        <>
+                                                            <button className="btn btn-sm center-div" onClick={() => handleAddEmail(client.cod)}><Plus /></button>
+                                                        </>
+                                                    )
+                                                }
+                                            </div>
+                                            <div className="cl-modal-input">
+                                                <span>
+                                                    Telefonos:
+                                                </span>
+                                                {phonesInput(client.cod)}
+                                                {
+                                                    edit && (
+                                                        <>
+                                                            <button className="btn btn-sm center-div" onClick={() => handleAddPhone(client.cod)}><Plus /></button>
+                                                        </>
+                                                    )
+                                                }
+                                            </div>
+                                            <div className="cl-modal-input">
+                                                <span>
+                                                    Dirección:
+                                                </span>
+                                                <input value={!edit ? client.dir : nClient.dir} name="dir" onChange={handleInputChange} readOnly={!edit} />
+                                            </div>
+                                        </>)}
 
+                                </div>
+                            </div>
+                            <div className="cl-modal-buttons">
+                                {edit&&(
+                                    <button className={`save ${!edit ? 'btn-dis' : ''}`} onClick={handleSave} disabled={!edit}>
+                                        Guardar
+                                    </button>
+                                )}
+                                <button className="edit" onClick={handleEdit}>
+                                    {!edit ? 'Editar' : 'Cancelar'}
+                                </button>
+                                <button className="delete" onClick={() => delRow(client.id, client.name)}>
+                                    Eliminar
+                                </button>
+                            </div>
+                            <div style={{height:"20px"}}/>
+                        </div>
+                    )
+                }
+                <ModalConfirm text={modalText} isOn={openModal} handleModal={handleClose} response={handleRes} />
+            </>
+        )
+    }
 }

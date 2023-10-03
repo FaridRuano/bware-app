@@ -107,6 +107,7 @@ export default function NavBar( {isOpen, setOpen} ) {
         <div className={isOpen?"nav-close":"nav-close close"}>
             <Anchor onClick={setOpen}/>
         </div>
+
         </>
     )
 }

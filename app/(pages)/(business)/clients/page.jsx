@@ -5,11 +5,17 @@ import NewModal from "@components/clients/NewModal"
 import DataTableBase from "@components/shared/Datatable/Datatable"
 import ModalConfirm from "@components/shared/ModalConfirm"
 import TitlePage from "@components/shared/TitlePage"
+import urls from "@configuration/conf"
 import { useEffect, useState } from "react"
 import { AlertCircle, AlertTriangle, File, Plus, Trash, UserPlus, Users, X } from "react-feather"
-  
+import useSWR, {mutate} from 'swr';
+import Loading from "@components/shared/Loading"
+
 export default function Home() {
   const [domLoaded, setDomLoaded] = useState(false)
+
+  const fetcher = (...args) => fetch(...args).then(res => res.json())
+  const { data, error, isLoading } = useSWR(urls.API_URL+'clients', fetcher)
 
   /* Selected Rows */
   const [areSelectedRows, setAreSelectedRows] = useState(false)
@@ -45,6 +51,7 @@ export default function Home() {
   }
 
   const handleCloseNew = () => {
+    mutate(urls.API_URL + 'clients')
     setNewModal(false)
   }
 
@@ -93,39 +100,6 @@ export default function Home() {
     },
   ]
 
-  const data = [
-    {
-      id: 1,
-      cod: 20313,
-      dni: '1805467527',
-      type: 1,
-      name: 'IMPORTADORA ALVARADO S.A. SOCIOS RICACHONES',
-      dir: 'Izamba reodndel a pinllo',
-      phone: '0996123884',
-      email: 'importadv@gmail.com',               
-    },
-    {
-      id: 2,
-      cod: 50313,
-      dni: '1805467527001',
-      type: 2,
-      name: 'MARCO FARID RUANO CAICEDO',
-      dir: 'Julio Enrique Paredes y Rodrigo Pachano',
-      phone: '0996447884',
-      email: 'fruanocm2777@gmail.com'
-    },    
-    {
-      id: 3,
-      cod: 60314,
-      dni: '1805467528',
-      type: 1,
-      name: 'ROMINA RUANO',
-      dir: 'Ficoa city',
-      phone: '0993124788',
-      email: 'romi.ruano@gmail.com'
-    },    
-  ]  
-
   const handleRows = ({ selectedRows }) => {
     //console.log('Selected Rows: ', selectedRows);
     if(selectedRows.length > 0){
@@ -153,6 +127,12 @@ export default function Home() {
     setDomLoaded(true);
   }, []);
 
+  if(isLoading){
+    return (
+      <Loading/>
+    )
+  }
+
   return (
     <>
       <TitlePage text={'Clientes'}/>
@@ -171,7 +151,7 @@ export default function Home() {
             <span><Users/></span>
           </div>
           <div className="card-text">
-            <span className="card-number">{data.length}</span>
+            <span className="card-number">{data?data.length:'0'}</span>
             <span className="card-name">Total clientes</span>
           </div>
         </div>
