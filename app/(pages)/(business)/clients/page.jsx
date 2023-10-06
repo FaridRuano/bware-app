@@ -29,17 +29,22 @@ export default function Home() {
   const [modalText, setModalText] = useState('')
 
   const handleClose = () => {
+    mutate(urls.API_URL + 'clients')
     setOpenModal(false)
   }
 
-  const handleRes = () => {
+  const handleRes = async () => {
+    await delRows()
+    mutate(urls.API_URL + 'clients')
     setOpenModal(false)
+    setAreSelectedRows(false)
   }
 
   /* Modal Info */
   const [infoModal, setInfoModal] = useState(false)
   
   const handleCloseInfo = () => {
+    mutate(urls.API_URL + 'clients')
     setInfoModal(false)
   }
   /* Modal New */
@@ -101,7 +106,6 @@ export default function Home() {
   ]
 
   const handleRows = ({ selectedRows }) => {
-    //console.log('Selected Rows: ', selectedRows);
     if(selectedRows.length > 0){
       setAreSelectedRows(true)
       setSelRows(selectedRows)
@@ -122,6 +126,29 @@ export default function Home() {
     const text = 'Estas seguro que deseas eliminar?'
     setModalText(text)
   }
+
+  const delRows = async () => {
+    setOpenModal(true)
+    const text = 'Estas seguro que deseas eliminar?'
+    setModalText(text)
+    try {
+        const response = await fetch('/api/clients?met=rows', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(selRows.map(obj => obj.cod))
+        })            
+        if (response.ok) {
+            setOpenModal(false)      
+            handleModal()          
+          } else {
+            console.error('Failed to delete client:', response.statusText);
+          }
+    } catch (err ){
+        console.error('Error sending client: ', err)
+    }
+}
 
   useEffect(() => {
     setDomLoaded(true);

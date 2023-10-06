@@ -3,7 +3,7 @@
 import ModalConfirm from "@components/shared/ModalConfirm";
 import { useEffect, useState } from "react";
 import { X, Plus } from "react-feather";
-import useSWR from 'swr';
+import useSWR, {mutate} from 'swr';
 import urls from "@configuration/conf"
 import Loading from "@components/shared/Loading"
 
@@ -141,8 +141,24 @@ export default function InfoModal({ client, isOpen, handleModal }) {
         setOpenModal(false)
     }
 
-    const handleRes = () => {
-        setOpenModal(false)
+    const handleRes = async () => {
+        try {
+            const response = await fetch('/api/clients', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(client.cod)
+            })            
+            if (response.ok) {
+                setOpenModal(false)      
+                handleModal()          
+              } else {
+                console.error('Failed to delete client:', response.statusText);
+              }
+        } catch (err ){
+            console.error('Error sending client: ', err)
+        }
     }
 
     const delRow = (idcl, name) => {

@@ -88,7 +88,7 @@ export default function NewModal({ isOpen, handleModal }) {
         }))
     }
 
-    const sendData = async (e) => {
+    const sendData = async () => {
         try {
             const response = await fetch('/api/clients', {
                 method: 'POST',

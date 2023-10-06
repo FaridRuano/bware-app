@@ -84,15 +84,46 @@ export async function POST(request) {
 
 export async function DELETE(request) {
     try {
+
+        const { searchParams } = new URL(request.url);
+        const met = searchParams.get('met');
+
+        let queryResult;
+
         const clientData = await request.json();
 
-        const clientDeleteResult = await query({
-            query: 'DELETE FROM clients WHERE cod = ?',
-            values: [clientData]
-        })
+        if(met === 'rows'){
+            for (const cod of clientData) {
+                queryResult = await query({
+                    query: 'DELETE FROM clients WHERE cod = ?',
+                    values: [cod]
+                })
+                await query({
+                    query: 'DELETE FROM cli_emails WHERE cod = ?',
+                    values: [cod]
+                })
+                await query({
+                    query: 'DELETE FROM cli_phones WHERE cod = ?',
+                    values: [cod]
+                })
+            }            
+        }else{
+            queryResult = await query({
+                query: 'DELETE FROM clients WHERE cod = ?',
+                values: [clientData]
+            })
+            await query({
+                query: 'DELETE FROM cli_emails WHERE cod = ?',
+                values: [cod]
+            })
+            await query({
+                query: 'DELETE FROM cli_phones WHERE cod = ?',
+                values: [cod]
+            })
+        }
 
-        const result = clientDeleteResult.affectedRows;
-
+        let result = JSON.stringify(queryResult);
+    
         let message = "";
 
         if (result) {
@@ -110,7 +141,7 @@ export async function DELETE(request) {
     } catch(err) {
         return new Response(JSON.stringify({
             status: 500,
-            data: 'Error: ', err,
+            data: 'Error: '+ err.message,
         }))
     }
 }
